@@ -6,6 +6,69 @@
 
 using namespace std;
 
+/*
+미리 알려드립니다. 본 코드는 아직 검증이 끝나지 않은 시험용 코드입니다. 너무 맹신하고 사용하시지 말고 구조를 보고 
+이해하는데에 중점을 두시는 것을 추천드립니다. 또한 코드의 설명이 어려우시다면 관련 문서도 올려놓았으니 이를 참고해주시기 바랍니다.
+
+본 코드는 재귀 함수를 반복 함수 F, 재귀 종료 조건 함수 G, 재귀 종료 후 처리 함수 H로 나누는 
+추상화를 진행한 클래스들입니다.
+
+코드는 크게 두가지 버전으로 RecursionFunction, RecursionFunction_OldFunctionPointer namespace버전으로 나뉩니다.
+이때 namespace별로 구현 방법을 말해보겠습니다.
+RecursionFunction namespace안에 구현한 클래스들은 모던 C++ 기본 라이브러리인 functional의 std::function을 이용하여
+추상화하였습니다. 본 namespace안에 있는 클래스 각각은 PointerTesting이라는 메소드가 있어 f, g, h 등의 선재되어야 하는
+함수가 잘 정의되어있는지 확인 할 수 있습니다.
+RecursionFunction_OldFunctionPointer namespace안에 구현한 클래스들은 고전 C++ 문법인 함수 포인터(예시 : int(*p)(int) )
+를 이용하여 추상화하였습니다. 본 namespace안에 있는 클래스 각각은 고전적인 포인터를 이용함으로 nullptr가 아닌 댕글링 포인터를
+막을 방법을 찾지 못하여 함수가 잘 정의되어있는지 확힌 하는 기능은 제외하였습니다.
+
+이어서 각 namespace에 있는 5개의 클래스에 대해서 말씀드리겠습니다. 아래의 5개의 클래스를 열거한 후 자세하게 설명드리겠습니다.
+- RecursionFunctionLinear<T, U>
+- RecursionFunctionLinearSimple<T, U>
+- RecursionFunctionLinearSimpleNonH<T>
+- RecursionFunctionStack<T, U>
+- RecursionFunctionStackSimple<T, U>
+
+이제 기본적인 선형 재귀 클래스인 RecursionFunctionLinear<T, U>에 대하여 설명드리겠습니다. 본 클래스의 함수 정의는 R:T->U 입니다. 즉 재귀하는
+공간 T와 결과 공간 U는 서로 다른 공간일 수 있는 재귀 함수 클래스입니다.
+본 클래스는 선형 재귀 함수를 f, g, h와 x로 나눈 R(f,g,h)(x)로 추상화 시킨 것으로 Run종류 함수를 돌리기 전에 반드시
+f, g, h에 관한 정의가 선재되어야 x를 넣어서 동작 시킬 수 있습니다. 본 클래스는 반드시 선형적인 재귀(예시 : 정수 팩토리얼 재귀)만
+돌릴 수 있음으로 이를 유의해야만 합니다. 또한 반드시 f, g, h는 각각 f는 T(T), g는 bool(T, T(T)), h는 U(T, T(T), bool(T, T(T)))형식인 함수로
+짜야만 합니다. Run메소드는 h를 return하는 형식의 선형 재귀 함수입니다.RunVoid메소드는 h를 재귀가 끝난 후 실행은 하되 h의 공역을 반환하지 않는
+void형 반환 형식의 선형 재귀 함수입니다. 만약 RecursionFunction namespace에 있는 본 클래스를 이용하실 경우 PointerTesting메소드를 사용하여
+f, g, h 함수가 전부 잘 정의 되어있는지를 확인하고, 잘 정의되어 있지 않은 모든 함수에 대하여 throw std::runtime_error를 보내어서 관리의 편안함을
+추구할 수 있도록 돕습니다.
+
+다음으로 RecursionFunctionLinear<T, U>의 f, g, h 함수의 정의역을 간략화한 RecursionFunctionLinearSimple<T, U>에 대하여 설명드리겠습니다.
+본 클래스는 선형 재귀 함수 R(f,g,h)(x)에서 f, g, h 각각의 정의역을 간략화 시킨 것으로 모두 정의역이 T입니다. 구체적으로 말하자면 f는 T(T),
+g는 bool(T), h는 U(T)로 간략화되었습니다. 이 외의 동작은 RecursionFunctionLinear<T, U>과 모두 동일합니다.
+
+다음으로는 RecursionFunctionLinearSimple<T, U>에서 함수 h를 제거한 RecursionFunctionLinearSimpleNonH<T>에 대하여 설명드리겠습니다.
+본 클래스의 함수 정의는 R:T->T 입니다. 즉 재귀하는 공간과 결과 공간은 서로 공간 T로 같아야하는 고전적인 재귀 함수 클래스입니다. 이외의 함수 f, g는
+f는 T(T), g는 bool(T)로 동일합니다. 본 클래스는 RecursionFunctionLinearSimple<T, U>의 메소드를 모두 지원합니다. 다만 Run은 마지막으로 동작한
+f(x)의 결과인 T를 반환하고 RunVoid는 마지막으로 동작한 f(x) 이후 바로 동작이 끝나는 void 반환형이라는 차이점이 존재합니다.
+
+이번에는 기본적인 비선형 재귀 클래스인 RecursionFunctionStack<T, U>에 대하여 설명드리겠습니다. 본 클래스의 함수 정의는 R:T->vector<U>가
+기본 정의입니다. 본 클래스는 비선형 재귀 함수를 f, g, h와 x로 나눈 R(f,g,h)(x)로 추상화 시킨 것으로 Run종류 함수를 돌리기 전에 반드시
+f, g, h에 관한 정의가 선재되어야 하고 필요시 관련 함수인 Oneh나 Controlh도 선재되어 있어야 x를 넣어서 동작 시킬 수 있습니다. 본 클래스는
+비선형 재귀 함수를 추상화 시킨 클래스이지만 선형 재귀 함수도 돌릴 수 있습니다. 이때 f, g, h는 각각 f는 vector<T>(T), g는 bool(T, vector<T>(T)),
+h는 U(T, vector<T>(T), bool(T, vector<T>(T)))형식인 함수로 짜야만 합니다. 각각의 Run종류 함수인 RunLeafList, RunLeafReduce, RunLeafFold, RunLeafVold에 대하여
+하나하나씩 알아보겠습니다. 먼저 RunLeafList메소드를 알아보겠습니다. 본 메소드는 R:vector<T>->vector<U>인 비선형 재귀 함수로서 순수하게 f, g, h만을
+이용하여 vector<U>를 return하는 메소드입니다. 다음으로 RunLeafReduce메소드에 대하여 알아보자면 Oneh:vector<U>->U인 vector<U>를 U로 축약하는 함수 Oneh가 존재합니다.
+또한 본 메소드는 RunLeafList로직과 동일하게 작동하다가 h들의 결과인 vector<U>가 다 모이게 되고 재귀가 완전히 끝나고 나서 Oneh를 거쳐서 U로 축약되어서
+U를 return 하는 메소드입니다. 그 다음으로 RunLeafFold메소드에 대하여 알아보자면 RunLeafReduce메소드와 return 유형이 U로서 유사하나 U로 만드는 과정이 다릅니다.
+이를 구체적으로 설명하자면 맨 처음 재귀가 돌아가기 전에 내보낼 U에 대한 초기값으로 StartDefaultStates를 받고 비선형 재귀 중에 g=true여서 h가 동작해서
+발생하는 U와 직전의 U(맨 처음 h가 동작 했을 시에는 StartDefaultStates인 U)를 합성하여 Controlh:U x U->U 나 Controlh:h x U->U의 메소드 오버로드 중 하나를 택하여
+계속 내보낼 U를 갱신하고 비선형 재귀가 완전히 끝나면 마지막으로 갱신된 U를 return하는 메소드입니다. 마지막으로 RunLeafVold메소드에 대해서 알아보겠습니다.
+본 메소드는 비선형 재귀 함수에서 g=true일 때 마다 h가 동작하지만 h의 출력을 수집하지 않고 return이 void인 메소드입니다.
+
+다음으로 RecursionFunctionStack<T, U>의 f, g, h 함수의 정의역을 간략화한 RecursionFunctionStackSimple<T, U>에 대하여 설명드리겠습니다.
+본 클래스는 비선형 재귀 함수 R(f,g,h)(x)에서 f, g, h 각각의 정의역을 간략화 시킨 것으로 모두 정의역이 T입니다. 구체적으로 말하자면 f는 vector<T>(T),
+g는 bool(T), h는 U(T)로 간략화되었습니다. 이 외의 동작은 RecursionFunctionStack<T, U>과 모두 동일합니다.
+
+-설명 내용 끝-
+*/
+
 namespace RecursionFunction
 {
 	//일반 선형 재귀 함수 버전
@@ -171,7 +234,7 @@ namespace RecursionFunction
 	};
 
 	//Simple And Non-H 선형 재귀 함수 버전
-	template <typename T, typename U>
+	template <typename T>
 	class RecursionFunctionLinearSimpleNonH
 	{
 	protected:
@@ -212,7 +275,6 @@ namespace RecursionFunction
 		RecursionFunctionLinearSimpleNonH(
 			function<T(T)> f,
 			function<bool(T)> g,
-			function<U(T)> h
 		)
 		{
 			this->f = f;
