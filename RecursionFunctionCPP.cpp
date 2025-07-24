@@ -1211,6 +1211,58 @@ public:
 	}
 };
 
+struct RFSsimpletesting
+{
+public:
+	vector<int> Shape;
+	vector<int> NowIndex;
+	float value = 0;
+	float save_value = 0;
+	RFSsimpletesting(vector<int> shape, vector<int> now_index, float val, float save)
+	{
+		this->Shape = shape;
+		this->NowIndex = now_index;
+		this->value = val;
+		this->save_value = save;
+	}
+	RFSsimpletesting() {}
+
+	static vector<RFSsimpletesting> F(RFSsimpletesting x)
+	{
+		vector<RFSsimpletesting> out = vector<RFSsimpletesting>();
+		for (int i = 0; i < x.Shape[x.NowIndex.size()]; i++)
+		{
+			vector<int> Temp = x.NowIndex;
+			Temp.push_back(i);
+			float temp_val = 0;
+			for (int j = 0; j < Temp.size(); j++)
+				temp_val += Temp[j];
+			out.push_back(RFSsimpletesting(x.Shape, Temp, temp_val, x.save_value + temp_val));
+		}
+		return out;
+	}
+	static bool G(RFSsimpletesting x)
+	{
+		if (x.Shape.size() == x.NowIndex.size())
+			return true;
+		else
+			return false;
+	}
+	static float H(RFSsimpletesting x)
+	{
+		string str = "";
+		for (int i = 0; i < x.NowIndex.size(); i++)
+		{
+			str += to_string(x.NowIndex[i]);
+			if (i + 1 < x.NowIndex.size())
+				str += ", ";
+		}
+
+		std::cout << str << " : " << x.save_value << std::endl;
+		return x.save_value;
+	}
+};
+
 int main()
 {
 	//함수 포인터를 이용한 비선형 재귀 파트
@@ -1241,5 +1293,17 @@ int main()
 
 	RFLtesting In2 = RFLtesting(7, 1);
 
-	std::cout << RF2.Run(In2);
+	std::cout << RF2.Run(In2) << std::endl;
+
+	//std::function을 이용한 Simple 비선형 재귀 파트
+	RecursionFunction::RecursionFunctionStackSimple<RFSsimpletesting, float> RF3
+		= RecursionFunction::RecursionFunctionStackSimple<RFSsimpletesting, float>
+		(RFSsimpletesting::F, RFSsimpletesting::G, RFSsimpletesting::H);
+	vector<int> Shape2 = vector<int>();
+	Shape2.push_back(3);
+	Shape2.push_back(4);
+	Shape2.push_back(5);
+	vector<RFSsimpletesting> In3 = vector<RFSsimpletesting>();
+	In3.push_back(RFSsimpletesting(Shape2, vector<int>(), 0, 0));
+	RF3.RunLeafVold(In3);
 }
