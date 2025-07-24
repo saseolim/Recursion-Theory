@@ -1123,6 +1123,7 @@ namespace RecursionFunction_OldFunctionPointer
 	};
 }
 
+//함수 포인터를 이용한 비선형 재귀 함수 클래스 사용 예시 구조체
 struct OldPointerRFStackTestingStruct
 {
 public:
@@ -1181,8 +1182,38 @@ public:
 	}
 };
 
+//std::function을 이용한 선형 재귀 함수 클래스 사용 예시 구조체
+struct RFLtesting
+{
+public:
+	int number = 0;
+	int value = 0;
+	RFLtesting(int num, int val)
+	{
+		this->number = num;
+		this->value = val;
+	}
+
+	static RFLtesting F(RFLtesting x)
+	{
+		return RFLtesting(x.number - 1, x.value * (x.number));
+	}
+	static bool G(RFLtesting x, function<RFLtesting(RFLtesting)> f)
+	{
+		if (x.number == 1)
+			return true;
+		else
+			return false;
+	}
+	static int H(RFLtesting x, function<RFLtesting(RFLtesting)> f, function<bool(RFLtesting, function<RFLtesting(RFLtesting)>)> g)
+	{
+		return x.value;
+	}
+};
+
 int main()
 {
+	//함수 포인터를 이용한 비선형 재귀 파트
 	RecursionFunction_OldFunctionPointer::RecursionFunctionStack<OldPointerRFStackTestingStruct, float> RF1 
 		= RecursionFunction_OldFunctionPointer::RecursionFunctionStack<OldPointerRFStackTestingStruct, float>
 		(OldPointerRFStackTestingStruct::F, OldPointerRFStackTestingStruct::G, OldPointerRFStackTestingStruct::H);
@@ -1190,14 +1221,25 @@ int main()
 	Shape.push_back(3);
 	Shape.push_back(4);
 	Shape.push_back(2);
-	vector<OldPointerRFStackTestingStruct> In = vector<OldPointerRFStackTestingStruct>();
-	In.push_back(OldPointerRFStackTestingStruct(vector<int>(), Shape));
+	vector<OldPointerRFStackTestingStruct> In1 = vector<OldPointerRFStackTestingStruct>();
+	In1.push_back(OldPointerRFStackTestingStruct(vector<int>(), Shape));
 	vector<float> norm;
-	norm = RF1.RunLeafList(In);
+	norm = RF1.RunLeafList(In1);
 	float sum = 0;
 	for (int i = 0; i < norm.size(); i++)
 	{
 		sum += norm[i];
 	}
 	std::cout << sum / norm.size() << std::endl;
+
+	std::cout << std::endl << std::endl;
+
+	//std::function을 이용한 선형 재귀 파트
+	RecursionFunction::RecursionFunctionLinear<RFLtesting, int> RF2
+		= RecursionFunction::RecursionFunctionLinear<RFLtesting, int>
+		(RFLtesting::F, RFLtesting::G, RFLtesting::H);
+
+	RFLtesting In2 = RFLtesting(7, 1);
+
+	std::cout << RF2.Run(In2);
 }
