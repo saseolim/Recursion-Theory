@@ -478,6 +478,240 @@ namespace RecursionFunction
 			return;
 		}
 	};
+
+	//Simple 비선형 재귀 함수 버전
+	template <typename T, typename U>
+	class RecursionFunctionStackSimple
+	{
+	protected:
+		function<vector<T>(T)> f = nullptr; //반복 시행 함수
+		function<bool(T)> g = nullptr; //재귀 종료 조건 함수
+		function<U(T)> h = nullptr; //종료 처리 함수
+
+		void PointerTesting(vector<string> BeforeStr = vector<string>())
+		{
+			vector<string> str = vector<string>();
+			string str_out = "";
+
+			if (!f)
+				str.push_back("F");
+			if (!g)
+				str.push_back("G");
+			if (!h)
+				str.push_back("H");
+
+			for (int i = 0; i < str.size(); i++)
+			{
+				if (!str_out.empty())
+					str_out += ", ";
+				str_out += str[i];
+			}
+			for (int i = 0; i < BeforeStr.size(); i++)
+			{
+				if (!str_out.empty())
+					str_out += ", ";
+				str_out += BeforeStr[i];
+			}
+
+			if (!str_out.empty())
+				throw runtime_error(str_out + " function is not initialized");
+		}
+		void PointerTesting(function<U(vector<U>)> other_function, string function_name)
+		{
+			vector<string> str = vector<string>();
+			if (!other_function)
+				str.push_back(function_name);
+
+			this->PointerTesting(str);
+		}
+		void PointerTesting(function<U(U, U)> other_function, string function_name)
+		{
+			vector<string> str = vector<string>();
+			if (!other_function)
+				str.push_back(function_name);
+
+			this->PointerTesting(str);
+		}
+		void PointerTesting(function<U(function<U(T)>, U)> other_function, string function_name)
+		{
+			vector<string> str = vector<string>();
+			if (!other_function)
+				str.push_back(function_name);
+
+			this->PointerTesting(str);
+		}
+	public:
+		void FunctionTester(function<U(vector<U>)> other_function, string function_name)
+		{
+			this->PointerTesting(other_function, function_name);
+		}
+		void FunctionTester(function<U(U, U)> other_function, string function_name)
+		{
+			this->PointerTesting(other_function, function_name);
+		}
+		void FunctionTester(function<U(function<U(T)>, U)> other_function, string function_name)
+		{
+			this->PointerTesting(other_function, function_name);
+		}
+		void FunctionTester()
+		{
+			this->PointerTesting();
+		}
+		RecursionFunctionStackSimple() {}
+		RecursionFunctionStackSimple(
+			function<vector<T>(T)> f,
+			function<bool(T)> g,
+			function<U(T)> h
+		)
+		{
+			this->f = f;
+			this->g = g;
+			this->h = h;
+			this->PointerTesting();
+		}
+
+		void SetF(function<vector<T>(T)> f) { this->f = f; }
+		void SetG(function<bool(T)> g) { this->g = g; }
+		void SetH(function<U(T)> h) { this->h = h; }
+
+		vector<U> RunLeafList(vector<T> StartStates) //말단 노드 각각의 U를 Array화 시켜서 내보내는 재귀 함수
+		{
+			this->PointerTesting();
+			stack<T> Stack = stack<T>();
+			for (auto it = StartStates.begin(); it != StartStates.end(); it++)
+			{
+				Stack.push(*it);
+			}
+
+			vector<U> Result = vector<U>();
+
+			while (Stack.size() > 0)
+			{
+				T current = Stack.top();
+				Stack.pop();
+
+				if (g(current))
+					Result.push_back(h(current));
+				else
+				{
+					vector<T> Loop = f(current);
+					for (int i = 0; i < Loop.size(); i++)
+						Stack.push(Loop[i]);
+				}
+			}
+			return Result;
+		}
+		//말단 노드 결과 U_Array를 마지막에 정리해서 하나의 U로 만드는 재귀 함수
+		U RunLeafReduce(vector<T> StartStates, function<U(vector<U>)> Oneh)
+		{
+			this->PointerTesting(Oneh, "Oneh");
+			stack<T> Stack = stack<T>();
+			for (auto it = StartStates.begin(); it != StartStates.end(); it++)
+			{
+				Stack.push(*it);
+			}
+
+			vector<U> Result = vector<U>();
+
+			while (Stack.size() > 0)
+			{
+				T current = Stack.top();
+				Stack.pop();
+
+				if (g(current))
+					Result.push_back(h(current));
+				else
+				{
+					vector<T> Loop = f(current);
+					for (int i = 0; i < Loop.size(); i++)
+						Stack.push(Loop[i]);
+				}
+			}
+			return Oneh(Result);
+		}
+		//말단 노드 결과가 하나하나씩 나올 때 마다 최종 return으로 쓰일 U를 이전 결과와 지금 결과를 함수로 넣어 새로운 U를 구하는 것을 반복하고 최종 U 하나를 내보내는 재귀 함수
+		U RunLeafFold(vector<T> StartStates, U StartDefaultStates, function<U(function<U(T)>, U)> Controlh)
+		{
+			this->PointerTesting(Controlh, "Controlh");
+			stack<T> Stack = stack<T>();
+			for (auto it = StartStates.begin(); it != StartStates.end(); it++)
+			{
+				Stack.push(*it);
+			}
+
+			U Result = StartDefaultStates;
+
+			while (Stack.size() > 0)
+			{
+				T current = Stack.top();
+				Stack.pop();
+
+				if (g(current))
+					Result = Controlh(h, Result);
+				else
+				{
+					vector<T> Loop = f(current);
+					for (int i = 0; i < Loop.size(); i++)
+						Stack.push(Loop[i]);
+				}
+			}
+			return Result;
+		}
+		//말단 노드 결과가 하나하나씩 나올 때 마다 최종 return으로 쓰일 U를 이전 결과와 지금 결과를 함수로 넣어 새로운 U를 구하는 것을 반복하고 최종 U 하나를 내보내는 재귀 함수
+		U RunLeafFold(vector<T> StartStates, U StartDefaultStates, function<U(U, U)> Controlh)
+		{
+			this->PointerTesting(Controlh, "Controlh");
+			stack<T> Stack = stack<T>();
+			for (auto it = StartStates.begin(); it != StartStates.end(); it++)
+			{
+				Stack.push(*it);
+			}
+
+			U Result = StartDefaultStates;
+
+			while (Stack.size() > 0)
+			{
+				T current = Stack.top();
+				Stack.pop();
+
+				if (g(current))
+					Result = Controlh(h(current), Result);
+				else
+				{
+					vector<T> Loop = f(current);
+					for (int i = 0; i < Loop.size(); i++)
+						Stack.push(Loop[i]);
+				}
+			}
+			return Result;
+		}
+		//아무것도 안 내보내는 재귀 함수
+		void RunLeafVold(vector<T> StartStates)
+		{
+			this->PointerTesting();
+			stack<T> Stack = stack<T>();
+			for (auto it = StartStates.begin(); it != StartStates.end(); it++)
+			{
+				Stack.push(*it);
+			}
+
+			while (Stack.size() > 0)
+			{
+				T current = Stack.top();
+				Stack.pop();
+
+				if (g(current))
+					h(current);
+				else
+				{
+					vector<T> Loop = f(current);
+					for (int i = 0; i < Loop.size(); i++)
+						Stack.push(Loop[i]);
+				}
+			}
+			return;
+		}
+	};
 }
 
 namespace RecursionFunction_OldFunctionPointer
