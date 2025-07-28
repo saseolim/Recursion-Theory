@@ -7,6 +7,35 @@
 using namespace std;
 
 /*
+2025월 07월 29일 화요일 내용 추가
+본 코드의 구성
+
+재귀 함수 라이브러리
+
+namespace RecursionhFunction
+- RecursionFunctionLinear<T, U>
+- RecursionFunctionLinearSimple<T, U>
+- RecursionFunctionLinearSimpleNonH<T>
+- RecursionFunctionStack<T, U>
+- RecursionFunctionStackSimple<T, U>
+
+namespace RecursionFunction_OldFunctionPointer
+- RecursionFunctionLinear<T, U>
+- RecursionFunctionLinearSimple<T, U>
+- RecursionFunctionLinearSimpleNonH<T>
+- RecursionFunctionStack<T, U>
+- RecursionFunctionStackSimple<T, U>
+
+라이브러리 실험 구현체
+
+struct OldPointerRFStackTestingStruct - 함수 포인터로 만든 비선형 재귀 함수 클래스에 대하여 테스트하기 위한 구현체
+struct RFLtesting - std::function으로 만든 선형 재귀 함수 클래스에 대하여 테스트 하기
+struct RFSsimpletesting - std::function으로 만든 비선형 SIMPLE버전 재귀 함수 클래스에 대하여 테스트 하기
+
+int main()
+*/
+
+/*
 미리 알려드립니다. 본 코드는 아직 검증이 끝나지 않은 시험용 코드입니다. 너무 맹신하고 사용하시지 말고 구조를 보고 
 이해하는데에 중점을 두시는 것을 추천드립니다. 또한 코드의 설명이 어려우시다면 관련 문서도 올려놓았으니 이를 참고해주시기 바랍니다.
 
@@ -274,7 +303,7 @@ namespace RecursionFunction
 		RecursionFunctionLinearSimpleNonH() {}
 		RecursionFunctionLinearSimpleNonH(
 			function<T(T)> f,
-			function<bool(T)> g,
+			function<bool(T)> g
 		)
 		{
 			this->f = f;
@@ -285,7 +314,7 @@ namespace RecursionFunction
 		void SetF(function<T(T)> f) { this->f = f; }
 		void SetG(function<bool(T)> g) { this->g = g; }
 
-		U Run(T StartStates)
+		T Run(T StartStates)
 		{
 			PointerTesting();
 
@@ -1328,6 +1357,9 @@ public:
 int main()
 {
 	//함수 포인터를 이용한 비선형 재귀 파트
+	std::cout << "[함수 포인터를 이용한 비선형 재귀 함수 클래스 실험]" << std::endl;
+	std::cout << "- [3,4,2] 다차원 배열에 접근하는 재귀 함수" << std::endl;
+
 	RecursionFunction_OldFunctionPointer::RecursionFunctionStack<OldPointerRFStackTestingStruct, float> RF1 
 		= RecursionFunction_OldFunctionPointer::RecursionFunctionStack<OldPointerRFStackTestingStruct, float>
 		(OldPointerRFStackTestingStruct::F, OldPointerRFStackTestingStruct::G, OldPointerRFStackTestingStruct::H);
@@ -1349,6 +1381,9 @@ int main()
 	std::cout << std::endl << std::endl;
 
 	//std::function을 이용한 선형 재귀 파트
+	std::cout << "[std::function을 이용한 선형 재귀 함수 클래스 실험]" << std::endl;
+	std::cout << "- 7! 팩토리얼 계산" << std::endl;
+
 	RecursionFunction::RecursionFunctionLinear<RFLtesting, int> RF2
 		= RecursionFunction::RecursionFunctionLinear<RFLtesting, int>
 		(RFLtesting::F, RFLtesting::G, RFLtesting::H);
@@ -1357,7 +1392,11 @@ int main()
 
 	std::cout << RF2.Run(In2) << std::endl;
 
+	std::cout << std::endl << std::endl;
+
 	//std::function을 이용한 Simple 비선형 재귀 파트
+	std::cout << "[std::function을 이용한 Simple 비선형 재귀 함수 클래스 실험]" << std::endl;
+	std::cout << "- [3.4.5] 다차원 배열에 접근하는 재귀 함수" << std::endl;
 	RecursionFunction::RecursionFunctionStackSimple<RFSsimpletesting, float> RF3
 		= RecursionFunction::RecursionFunctionStackSimple<RFSsimpletesting, float>
 		(RFSsimpletesting::F, RFSsimpletesting::G, RFSsimpletesting::H);
